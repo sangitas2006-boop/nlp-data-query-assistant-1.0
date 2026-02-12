@@ -229,26 +229,31 @@ disabled_state = df is None
 
 col_input, col_mic = st.columns([6, 1])
 
-with col_mic:
-    audio = mic_recorder(
-        start_prompt="🎤",
-        stop_prompt="⏹",
-        just_once=True,
-        use_container_width=True
-    )
-
-    if audio:
-        with st.spinner("Transcribing..."):
-            text = transcribe_audio(audio["bytes"])
-            st.session_state.question_input = text
-            st.success("Voice captured successfully!")
-
 with col_input:
     query = st.text_input(
         "Type your question here:",
         key="question_input",
         placeholder="Example: Show average sales by region"
     )
+with col_mic:
+    st.markdown("<div style='margin-top: 28px;'>", unsafe_allow_html=True)
+
+    audio = mic_recorder(
+        start_prompt="🎤 Record",
+        stop_prompt="⏹ Stop",
+        just_once=True,
+        use_container_width=True,
+        key="mic_button"
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if audio:
+     with st.spinner("Transcribing..."):
+        text = transcribe_audio(audio["bytes"])
+        st.session_state.question_input = text
+        st.rerun()
+
 
 if df is None:
     st.markdown("""
@@ -357,6 +362,15 @@ input[type="text"] {
     transform: translateY(4px);
     box-shadow: 0 4px 0 #3730a3;
 }
+                button[data-testid="mic-button"] {
+    background: linear-gradient(145deg, #6366f1, #4f46e5) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 6px 0 #3730a3,
+                0 10px 20px rgba(0,0,0,0.4) !important;
+}
+
 
 /* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
