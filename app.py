@@ -1,13 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_mic_recorder import mic_recorder
-from openai import OpenAI
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-
-
-
+from streamlit_js_eval import streamlit_js_eval
 
 # Initialize session state safely (only once)
 if "df" not in st.session_state:
@@ -231,44 +225,35 @@ df = st.session_state.df
 
 col_input, col_mic = st.columns([6, 1])
 
-# ---------- MIC ----------
 with col_mic:
-    audio = mic_recorder(
-        start_prompt="🎤 Record",
-        stop_prompt="⏹ Stop",
-        just_once=True,
-        use_container_width=True,
-        key="mic"
-    )
+    if st.button("🎤 Speak"):
+        speech_text = streamlit_js_eval(
+            js_expressions="""
+            new Promise((resolve, reject) => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.start();
+                recognition.onresult = (event) => {
+                    resolve(event.results[0][0].transcript);
+                };
+                recognition.onerror = () => resolve("");
+            });
+            """,
+            key="voice_input"
+        )
 
-def transcribe_audio(audio_bytes):
-    with open("temp_audio.wav", "wb") as f:
-        f.write(audio_bytes)
+        if speech_text:
+            st.session_state.question_input = speech_text
+            st.success("Transcribed: " + speech_text)
 
-    with open("temp_audio.wav", "rb") as audio_file:
-        transcript = client.audio.transcriptions.create(
-    model="gpt-4o-mini-transcribe",
-    file=audio_file
-)
-
-    return transcript.text
-st.write(audio)
-
-
-# ---------- PROCESS AUDIO OUTSIDE ----------
-if audio is not None and "bytes" in audio:
-    st.write("Audio received")
-    with st.spinner("Transcribing..."):
-        text = transcribe_audio(audio["bytes"])
-        st.session_state.question_input = text
-
-# ---------- INPUT FIELD ----------
 with col_input:
     query = st.text_input(
         "Type your question here:",
         key="question_input",
         placeholder="Example: Show average sales by region"
     )
+
 
 
 
