@@ -5,3 +5,7 @@ numpy
 streamlit-mic-recorder
 openai
 streamlit-js-eval
+streamlit-webrtc
+av
+SpeechRecognition
+pydub
