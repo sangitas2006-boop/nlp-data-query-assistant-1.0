@@ -1,0 +1,16 @@
+OrderID,Region,Category,Sales,Quantity,Profit
+1001,North,Electronics,1200,2,300
+1002,South,Furniture,850,1,120
+1003,East,Electronics,640,3,150
+1004,West,Office Supplies,300,5,80
+1005,North,Furniture,1500,2,400
+1006,South,Electronics,2000,4,500
+1007,East,Office Supplies,450,6,90
+1008,West,Electronics,1700,3,450
+1009,North,Office Supplies,250,4,60
+1010,South,Furniture,900,2,200
+1011,East,Electronics,1100,1,250
+1012,West,Furniture,1300,2,320
+1013,North,Electronics,2200,5,600
+1014,South,Office Supplies,400,7,70
+1015,East,Furniture,950,3,210

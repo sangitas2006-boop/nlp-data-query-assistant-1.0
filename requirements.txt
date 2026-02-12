@@ -1,0 +1,8 @@
+streamlit
+pandas
+plotly
+openai-whisper
+numpy
+scipy
+sounddevice
+ffmpeg-python
