@@ -4,14 +4,8 @@ import plotly.express as px
 from streamlit_mic_recorder import mic_recorder
 from openai import OpenAI
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-st.write("Secrets loaded:", st.secrets)
-st.write("Key exists:", "OPENAI_API_KEY" in st.secrets)
 
-from openai import OpenAI
 
-client = OpenAI(api_key="")
-
-print(client.models.list())
 
 
 
