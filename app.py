@@ -2,14 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_js_eval import streamlit_js_eval
-
-# Initialize session state safely (only once)
-if "df" not in st.session_state:
-    st.session_state.df = None
-
-if "question_input" not in st.session_state:
-    st.session_state.question_input = ""
-
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
+import av
+import speech_recognition as sr
+import numpy as np
 
 
 # ------------------ Page Config ------------------
@@ -18,6 +14,13 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+# Initialize session state safely (only once)
+if "df" not in st.session_state:
+    st.session_state.df = None
+
+if "question_input" not in st.session_state:
+    st.session_state.question_input = ""
 
 # ------------------ GLOBAL STYLING ------------------
 st.markdown("""
@@ -217,6 +220,39 @@ if uploaded_file is not None:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
+class AudioProcessor(AudioProcessorBase):
+    def __init__(self):
+        self.recognizer = sr.Recognizer()
+        self.audio_buffer = b""
+
+    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
+        audio = frame.to_ndarray()
+
+        # Convert float32 to int16
+        audio_int16 = (audio * 32767).astype(np.int16)
+
+        self.audio_buffer += audio_int16.tobytes()
+
+        # Process only if enough audio collected
+        if len(self.audio_buffer) > 32000:
+            try:
+                audio_data = sr.AudioData(
+                    self.audio_buffer,
+                    sample_rate=frame.sample_rate,
+                    sample_width=2
+                )
+
+                text = self.recognizer.recognize_google(audio_data)
+
+                st.session_state.question_input = text
+                self.audio_buffer = b""  # reset buffer
+
+            except:
+                pass
+
+        return frame
+
+
 # ------------------ Ask Section ------------------
 st.markdown('<div class="section-card glow-card">', unsafe_allow_html=True)
 st.header("Step 2: Ask Questions")
@@ -226,26 +262,11 @@ df = st.session_state.df
 col_input, col_mic = st.columns([6, 1])
 
 with col_mic:
-    if st.button("🎤 Speak"):
-        speech_text = streamlit_js_eval(
-            js_expressions="""
-            new Promise((resolve, reject) => {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.start();
-                recognition.onresult = (event) => {
-                    resolve(event.results[0][0].transcript);
-                };
-                recognition.onerror = () => resolve("");
-            });
-            """,
-            key="voice_input"
-        )
-
-        if speech_text:
-            st.session_state.question_input = speech_text
-            st.success("Transcribed: " + speech_text)
+    webrtc_streamer(
+        key="speech",
+        audio_processor_factory=AudioProcessor,
+        media_stream_constraints={"audio": True, "video": False},
+    )
 
 with col_input:
     query = st.text_input(
