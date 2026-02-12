@@ -238,8 +238,22 @@ with col_mic:
         key="mic"
     )
 
+def transcribe_audio(audio_bytes):
+    with open("temp_audio.wav", "wb") as f:
+        f.write(audio_bytes)
+
+    with open("temp_audio.wav", "rb") as audio_file:
+        transcript = client.audio.transcriptions.create(
+    model="gpt-4o-mini-transcribe",
+    file=audio_file
+)
+
+    return transcript.text
+st.write(audio)
+
+
 # ---------- PROCESS AUDIO OUTSIDE ----------
-if audio and audio["bytes"]:
+if audio is not None and "bytes" in audio:
     st.write("Audio received")
     with st.spinner("Transcribing..."):
         text = transcribe_audio(audio["bytes"])
@@ -437,18 +451,6 @@ def process_query(query, df):
             return result, "bar", label_col, target_num
 
     return None, None, None, None
-
-def transcribe_audio(audio_bytes):
-    with open("temp_audio.wav", "wb") as f:
-        f.write(audio_bytes)
-
-    with open("temp_audio.wav", "rb") as audio_file:
-        transcript = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file
-        )
-
-    return transcript.text
 
 # ------------------ Query Execution (UNCHANGED) ------------------
 analyze = st.button("🔎 Analyze Query")
