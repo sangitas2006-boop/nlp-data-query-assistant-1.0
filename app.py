@@ -461,31 +461,27 @@ def process_query(query, df):
 
     return None, None, None, None
 
-# ------------------ Query Execution (UNCHANGED) ------------------
-analyze = st.button("🔎 Analyze Query")
+# ------------------ AUTO ANALYZE ------------------
 
-if analyze:
-    if df is None:
-        st.warning("Please upload a dataset first.")
-    elif not st.session_state.question_input:
-        st.warning("Please enter a query.")
-    else:
-        result, chart_type, x, y = process_query(st.session_state.question_input, df)
+if df is not None and st.session_state.question_input:
 
-        if result is not None:
-            st.markdown('<div class="section-card">', unsafe_allow_html=True)
-            st.markdown("<h3>📈 Analysis Result</h3>", unsafe_allow_html=True)
-            st.dataframe(result)
+    result, chart_type, x, y = process_query(
+        st.session_state.question_input,
+        df
+    )
 
-            if chart_type == "bar" and x is not None:
-                fig = px.bar(result, x=x, y=y)
-                st.plotly_chart(fig, use_container_width=True)
-            elif chart_type == "bar":
-                fig = px.bar(result, y=y)
-                st.plotly_chart(fig, use_container_width=True)
+    if result is not None:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown("<h3>📈 Analysis Result</h3>", unsafe_allow_html=True)
+        st.dataframe(result)
 
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.warning("Could not understand the query. Try another phrasing.")
+        if chart_type == "bar" and x is not None:
+            fig = px.bar(result, x=x, y=y)
+            st.plotly_chart(fig, use_container_width=True)
+        elif chart_type == "bar":
+            fig = px.bar(result, y=y)
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
