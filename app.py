@@ -225,27 +225,26 @@ st.markdown('<div class="section-card glow-card">', unsafe_allow_html=True)
 st.header("Step 2: Ask Questions")
 
 df = st.session_state.df
-disabled_state = df is None
 
 col_input, col_mic = st.columns([6, 1])
 
-# ---- MIC FIRST ----
+# ---------- MIC ----------
 with col_mic:
     audio = mic_recorder(
         start_prompt="🎤 Record",
         stop_prompt="⏹ Stop",
         just_once=True,
         use_container_width=True,
-        key="mic_button"
+        key="mic"
     )
 
-    if audio:
-        with st.spinner("Transcribing..."):
-            text = transcribe_audio(audio["bytes"])
-            st.session_state.question_input = text
-            st.rerun()
+# ---------- PROCESS AUDIO OUTSIDE ----------
+if audio and audio["bytes"]:
+    with st.spinner("Transcribing..."):
+        text = transcribe_audio(audio["bytes"])
+        st.session_state.question_input = text
 
-# ---- TEXT INPUT AFTER MIC ----
+# ---------- INPUT FIELD ----------
 with col_input:
     query = st.text_input(
         "Type your question here:",
