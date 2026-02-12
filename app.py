@@ -2,9 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import json
-
-from streamlit_mic_recorder import mic_recorder
+import streamlit.components.v1 as components
+import sounddevice as sd
+import numpy as np
+import scipy.io.wavfile as wav
+import tempfile
 from openai import OpenAI
+import os
+
 
 
 # Initialize session state safely (only once)
@@ -13,9 +18,6 @@ if "df" not in st.session_state:
 
 if "question_input" not in st.session_state:
     st.session_state.question_input = ""
-
-if "whisper_model" not in st.session_state:
-    st.session_state.whisper_model = whisper.load_model("base")
 
 # ------------------ Voice Recording Function ------------------
 def record_audio(duration=5, fs=16000):
@@ -29,28 +31,15 @@ def record_audio(duration=5, fs=16000):
 
     return temp_file.name
 def transcribe_audio(file_path):
-    model = st.session_state.whisper_model
-    result = model.transcribe(file_path)
-    return result["text"]
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# ------------------ Voice Recording Functions ------------------
+    with open(file_path, "rb") as audio_file:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
 
-def record_audio(duration=5, fs=16000):
-    st.info("🎙 Recording... Speak now")
-
-    audio = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='int16')
-    sd.wait()
-
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    wav.write(temp_file.name, fs, audio)
-
-    return temp_file.name
-
-
-def transcribe_audio(file_path):
-    model = st.session_state.whisper_model
-    result = model.transcribe(file_path)
-    return result["text"]
+    return transcript.text
 
 
 # ------------------ Page Config ------------------
