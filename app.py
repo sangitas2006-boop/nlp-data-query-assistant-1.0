@@ -2,14 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import json
-import streamlit.components.v1 as components
-import speech_recognition as sr
-import whisper
-import sounddevice as sd
-import numpy as np
-import scipy.io.wavfile as wav
-import tempfile
 
+from streamlit_mic_recorder import mic_recorder
+from openai import OpenAI
 
 
 # Initialize session state safely (only once)
@@ -273,10 +268,15 @@ disabled_state = df is None
 col_input, col_mic = st.columns([6, 1])
 
 with col_mic:
-    if st.button("🎤 Record"):
-        audio_file = record_audio()
-        text = transcribe_audio(audio_file)
+    audio = mic_recorder(
+        start_prompt="🎤 Record",
+        stop_prompt="⏹ Stop",
+        just_once=True,
+        use_container_width=True
+    )
 
+    if audio:
+        text = transcribe_audio(audio["bytes"])
         st.session_state.question_input = text
         st.success("Voice captured successfully!")
 
@@ -461,6 +461,19 @@ def process_query(query, df):
             return result, "bar", label_col, target_num
 
     return None, None, None, None
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+def transcribe_audio(audio_bytes):
+    with open("temp_audio.wav", "wb") as f:
+        f.write(audio_bytes)
+
+    with open("temp_audio.wav", "rb") as f:
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=f
+        )
+
+    return transcript.text
 
 # ------------------ Query Execution (UNCHANGED) ------------------
 analyze = st.button("🔎 Analyze Query")
