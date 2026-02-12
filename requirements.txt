@@ -5,3 +5,4 @@ numpy
 streamlit-mic-recorder
 openai
 whisper
+import sounddevice as sd
