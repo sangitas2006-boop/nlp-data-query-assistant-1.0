@@ -229,15 +229,8 @@ disabled_state = df is None
 
 col_input, col_mic = st.columns([6, 1])
 
-with col_input:
-    query = st.text_input(
-        "Type your question here:",
-        key="question_input",
-        placeholder="Example: Show average sales by region"
-    )
+# ---- MIC FIRST ----
 with col_mic:
-    st.markdown("<div style='margin-top: 28px;'>", unsafe_allow_html=True)
-
     audio = mic_recorder(
         start_prompt="🎤 Record",
         stop_prompt="⏹ Stop",
@@ -246,13 +239,20 @@ with col_mic:
         key="mic_button"
     )
 
-    st.markdown("</div>", unsafe_allow_html=True)
-
     if audio:
-     with st.spinner("Transcribing..."):
-        text = transcribe_audio(audio["bytes"])
-        st.session_state.question_input = text
-        st.rerun()
+        with st.spinner("Transcribing..."):
+            text = transcribe_audio(audio["bytes"])
+            st.session_state.question_input = text
+            st.rerun()
+
+# ---- TEXT INPUT AFTER MIC ----
+with col_input:
+    query = st.text_input(
+        "Type your question here:",
+        key="question_input",
+        placeholder="Example: Show average sales by region"
+    )
+
 
 
 if df is None:
