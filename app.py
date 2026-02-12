@@ -1,12 +1,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import json
-import streamlit.components.v1 as components
 from streamlit_mic_recorder import mic_recorder
 from openai import OpenAI
-
-
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 
 # Initialize session state safely (only once)
@@ -15,6 +12,7 @@ if "df" not in st.session_state:
 
 if "question_input" not in st.session_state:
     st.session_state.question_input = ""
+
 
 
 # ------------------ Page Config ------------------
@@ -233,16 +231,17 @@ col_input, col_mic = st.columns([6, 1])
 
 with col_mic:
     audio = mic_recorder(
-        start_prompt="🎤 Record",
-        stop_prompt="⏹ Stop",
+        start_prompt="🎤",
+        stop_prompt="⏹",
         just_once=True,
         use_container_width=True
     )
 
     if audio:
-        text = transcribe_audio(audio["bytes"])
-        st.session_state.question_input = text
-        st.success("Voice captured successfully!")
+        with st.spinner("Transcribing..."):
+            text = transcribe_audio(audio["bytes"])
+            st.session_state.question_input = text
+            st.success("Voice captured successfully!")
 
 with col_input:
     query = st.text_input(
@@ -250,7 +249,6 @@ with col_input:
         key="question_input",
         placeholder="Example: Show average sales by region"
     )
-
 
 if df is None:
     st.markdown("""
@@ -425,16 +423,15 @@ def process_query(query, df):
             return result, "bar", label_col, target_num
 
     return None, None, None, None
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def transcribe_audio(audio_bytes):
     with open("temp_audio.wav", "wb") as f:
         f.write(audio_bytes)
 
-    with open("temp_audio.wav", "rb") as f:
+    with open("temp_audio.wav", "rb") as audio_file:
         transcript = client.audio.transcriptions.create(
             model="whisper-1",
-            file=f
+            file=audio_file
         )
 
     return transcript.text
