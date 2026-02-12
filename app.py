@@ -2,10 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_js_eval import streamlit_js_eval
-from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
-import av
-import speech_recognition as sr
-import numpy as np
 
 
 # ------------------ Page Config ------------------
@@ -220,39 +216,6 @@ if uploaded_file is not None:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-class AudioProcessor(AudioProcessorBase):
-    def __init__(self):
-        self.recognizer = sr.Recognizer()
-        self.audio_buffer = b""
-
-    def recv(self, frame: av.AudioFrame) -> av.AudioFrame:
-        audio = frame.to_ndarray()
-
-        # Convert float32 to int16
-        audio_int16 = (audio * 32767).astype(np.int16)
-
-        self.audio_buffer += audio_int16.tobytes()
-
-        # Process only if enough audio collected
-        if len(self.audio_buffer) > 32000:
-            try:
-                audio_data = sr.AudioData(
-                    self.audio_buffer,
-                    sample_rate=frame.sample_rate,
-                    sample_width=2
-                )
-
-                text = self.recognizer.recognize_google(audio_data)
-
-                st.session_state.question_input = text
-                self.audio_buffer = b""  # reset buffer
-
-            except:
-                pass
-
-        return frame
-
-
 # ------------------ Ask Section ------------------
 st.markdown('<div class="section-card glow-card">', unsafe_allow_html=True)
 st.header("Step 2: Ask Questions")
@@ -287,13 +250,14 @@ with col2:
         )
 
         if speech_text:
-            st.session_state.question = speech_text
+         st.session_state.question_input = speech_text
 
-with col1:
-    query = st.text_input(
-        "Type your query:",
-        key="question"
-    )
+
+query = st.text_input(
+    "Type your query:",
+    key="question_input"
+)
+
 
 
 
@@ -481,27 +445,29 @@ def process_query(query, df):
 
     return None, None, None, None
 
-# ------------------ AUTO ANALYZE ------------------
+analyze = st.button("🔎 Analyze")
 
-if df is not None and st.session_state.question_input:
+if analyze:
+    if df is None:
+        st.warning("Please upload a dataset first.")
+    elif not query:
+        st.warning("Please enter a query.")
+    else:
+        result, chart_type, x, y = process_query(query, df)
 
-    result, chart_type, x, y = process_query(
-        st.session_state.question_input,
-        df
-    )
+        if result is not None:
+            st.markdown('<div class="section-card">', unsafe_allow_html=True)
+            st.markdown("<h3>📈 Analysis Result</h3>", unsafe_allow_html=True)
+            st.dataframe(result)
 
-    if result is not None:
-        st.markdown('<div class="section-card">', unsafe_allow_html=True)
-        st.markdown("<h3>📈 Analysis Result</h3>", unsafe_allow_html=True)
-        st.dataframe(result)
+            if chart_type == "bar" and x is not None:
+                fig = px.bar(result, x=x, y=y)
+                st.plotly_chart(fig, use_container_width=True)
+            elif chart_type == "bar":
+                fig = px.bar(result, y=y)
+                st.plotly_chart(fig, use_container_width=True)
 
-        if chart_type == "bar" and x is not None:
-            fig = px.bar(result, x=x, y=y)
-            st.plotly_chart(fig, use_container_width=True)
-        elif chart_type == "bar":
-            fig = px.bar(result, y=y)
-            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.warning("Could not understand the query.")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
