@@ -259,20 +259,40 @@ st.header("Step 2: Ask Questions")
 
 df = st.session_state.df
 
-col_input, col_mic = st.columns([6, 1])
+col1, col2 = st.columns([4, 1])
 
-with col_mic:
-    webrtc_streamer(
-        key="speech",
-        audio_processor_factory=AudioProcessor,
-        media_stream_constraints={"audio": True, "video": False},
-    )
+with col2:
+    if st.button("🎤 Speak"):
+        speech_text = streamlit_js_eval(
+            js_expressions="""
+            new Promise((resolve, reject) => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-with col_input:
+                if (!SpeechRecognition) {
+                    resolve("");
+                }
+
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    resolve(event.results[0][0].transcript);
+                };
+
+                recognition.onerror = () => resolve("");
+            });
+            """,
+            key="voice_input"
+        )
+
+        if speech_text:
+            st.session_state.question = speech_text
+
+with col1:
     query = st.text_input(
-        "Type your question here:",
-        key="question_input",
-        placeholder="Example: Show average sales by region"
+        "Type your query:",
+        key="question"
     )
 
 
