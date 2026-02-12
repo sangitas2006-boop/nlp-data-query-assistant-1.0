@@ -4,3 +4,4 @@ plotly
 numpy
 streamlit-mic-recorder
 openai
+whisper
