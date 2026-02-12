@@ -240,6 +240,7 @@ with col_mic:
 
 # ---------- PROCESS AUDIO OUTSIDE ----------
 if audio and audio["bytes"]:
+    st.write("Audio received")
     with st.spinner("Transcribing..."):
         text = transcribe_audio(audio["bytes"])
         st.session_state.question_input = text
